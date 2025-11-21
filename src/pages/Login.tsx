@@ -18,24 +18,40 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate login/register
-    const user = {
-      email,
-      role,
-      id: Math.random().toString(36).substr(2, 9),
-    };
-    
-    localStorage.setItem("user", JSON.stringify(user));
-    
-    toast({
-      title: isLogin ? "Login successful" : "Registration successful",
-      description: `Welcome ${role}!`,
-    });
-    
-    navigate("/dashboard");
+    try {
+      const { authAPI } = await import("@/lib/api");
+      
+      let response;
+      if (isLogin) {
+        response = await authAPI.login(email, password);
+      } else {
+        response = await authAPI.register(email, password, role.toUpperCase());
+      }
+      
+      // Store token and user info
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user", JSON.stringify({
+        email: response.email,
+        role: response.role.toLowerCase(),
+        id: response.userId.toString(),
+      }));
+      
+      toast({
+        title: isLogin ? "Login successful" : "Registration successful",
+        description: `Welcome ${response.role.toLowerCase()}!`,
+      });
+      
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Authentication failed. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

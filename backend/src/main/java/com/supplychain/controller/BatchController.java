@@ -1,0 +1,50 @@
+package com.supplychain.controller;
+
+import com.supplychain.dto.BatchDTO;
+import com.supplychain.dto.BatchStatusUpdateDTO;
+import com.supplychain.dto.SupplyChainEventDTO;
+import com.supplychain.service.BatchService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/batches")
+@RequiredArgsConstructor
+public class BatchController {
+
+    private final BatchService batchService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('SUPPLIER')")
+    public ResponseEntity<BatchDTO> createBatch(@Valid @RequestBody BatchDTO batchDTO) {
+        return ResponseEntity.ok(batchService.createBatch(batchDTO));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<BatchDTO>> getAllBatches() {
+        return ResponseEntity.ok(batchService.getAllBatches());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BatchDTO> getBatch(@PathVariable Long id) {
+        return ResponseEntity.ok(batchService.getBatch(id));
+    }
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('MANUFACTURER', 'DISTRIBUTOR', 'RETAILER')")
+    public ResponseEntity<BatchDTO> updateBatchStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody BatchStatusUpdateDTO updateDTO) {
+        return ResponseEntity.ok(batchService.updateBatchStatus(id, updateDTO));
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<SupplyChainEventDTO>> getBatchHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(batchService.getBatchHistory(id));
+    }
+}
