@@ -35,10 +35,11 @@ api.interceptors.response.use(
 );
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   role: 'ADMIN' | 'SUPPLIER' | 'MANUFACTURER' | 'DISTRIBUTOR' | 'RETAILER' | 'CONSUMER';
-  userId: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
+  createdAt: string;
 }
 
 export interface AuthResponse {
@@ -157,6 +158,28 @@ export const consumerAPI = {
     const response = await api.get<VerificationResponse>(`/consumer/verify?batchId=${batchId}`);
     return response.data;
   },
+};
+
+// User APIs (Admin)
+export const userAPI = {
+  getAll: async () => {
+    const response = await api.get<User[]>('/users');
+    return response.data;
+  },
+  updateStatus: async (id: number, status: string) => {
+    const response = await api.put<User>(`/users/${id}/status?status=${status}`);
+    return response.data;
+  },
+  updateRole: async (id: number, role: string) => {
+    const response = await api.put<User>(`/users/${id}/role?role=${role}`);
+    return response.data;
+  },
+};
+
+// Get current user's batches
+export const getMyBatches = async () => {
+  const response = await api.get<Batch[]>('/batches/my');
+  return response.data;
 };
 
 export default api;

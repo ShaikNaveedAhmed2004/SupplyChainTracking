@@ -1,38 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, Package } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const mockBatches = [
-  {
-    id: "BATCH-001",
-    product: "Organic Cotton Fabric",
-    quantity: 500,
-    status: "IN_TRANSIT",
-    location: "Warehouse A",
-    createdAt: "2024-01-15",
-    txHash: "0x1234...5678",
-  },
-  {
-    id: "BATCH-002",
-    product: "Polyester Thread",
-    quantity: 1000,
-    status: "DELIVERED",
-    location: "Manufacturer Site",
-    createdAt: "2024-01-12",
-    txHash: "0xabcd...efgh",
-  },
-  {
-    id: "BATCH-003",
-    product: "Silk Blend Fabric",
-    quantity: 250,
-    status: "CREATED",
-    location: "Origin Point",
-    createdAt: "2024-01-18",
-    txHash: "0x9876...5432",
-  },
-];
+import { type Batch } from "@/lib/api";
 
 const statusColors = {
   CREATED: "bg-secondary text-secondary-foreground",
@@ -41,15 +12,28 @@ const statusColors = {
   SOLD: "bg-primary text-primary-foreground",
 };
 
-const BatchList = () => {
+interface BatchListProps {
+  batches: Batch[];
+  onRefresh?: () => void;
+}
+
+const BatchList = ({ batches, onRefresh }: BatchListProps) => {
   const navigate = useNavigate();
+
+  if (batches.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No batches found. Create your first batch to get started.
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Batch ID</TableHead>
+            <TableHead>Batch Number</TableHead>
             <TableHead>Product</TableHead>
             <TableHead>Quantity</TableHead>
             <TableHead>Status</TableHead>
@@ -59,17 +43,17 @@ const BatchList = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockBatches.map((batch) => (
+          {batches.map((batch) => (
             <TableRow key={batch.id}>
-              <TableCell className="font-mono text-sm">{batch.id}</TableCell>
-              <TableCell>{batch.product}</TableCell>
+              <TableCell className="font-mono text-sm">{batch.batchNumber}</TableCell>
+              <TableCell>{batch.productName}</TableCell>
               <TableCell>{batch.quantity} units</TableCell>
               <TableCell>
                 <Badge className={statusColors[batch.status as keyof typeof statusColors]}>
                   {batch.status.replace("_", " ")}
                 </Badge>
               </TableCell>
-              <TableCell>{batch.location}</TableCell>
+              <TableCell>{batch.currentLocation}</TableCell>
               <TableCell>{new Date(batch.createdAt).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
                 <Button
