@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, LogOut, User, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import { Package, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import AdminDashboard from "@/components/dashboards/AdminDashboard";
 import SupplierDashboard from "@/components/dashboards/SupplierDashboard";
 import ManufacturerDashboard from "@/components/dashboards/ManufacturerDashboard";
@@ -10,23 +10,31 @@ import DistributorDashboard from "@/components/dashboards/DistributorDashboard";
 import RetailerDashboard from "@/components/dashboards/RetailerDashboard";
 import ConsumerDashboard from "@/components/dashboards/ConsumerDashboard";
 
-interface User {
+interface UserData {
   email: string;
   role: string;
-  id: string;
+  id: number;
 }
 
 const Dashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    
+    if (!token || !userStr) {
       navigate("/login");
       return;
     }
-    setUser(JSON.parse(storedUser));
+    
+    try {
+      const userData = JSON.parse(userStr);
+      setUser(userData);
+    } catch (error) {
+      navigate("/login");
+    }
   }, [navigate]);
 
   const handleLogout = () => {
@@ -38,21 +46,25 @@ const Dashboard = () => {
   if (!user) return null;
 
   const renderDashboard = () => {
-    switch (user.role) {
-      case "admin":
+    if (!user) return null;
+    
+    const role = user.role.toUpperCase();
+    
+    switch (role) {
+      case "ADMIN":
         return <AdminDashboard />;
-      case "supplier":
+      case "SUPPLIER":
         return <SupplierDashboard />;
-      case "manufacturer":
+      case "MANUFACTURER":
         return <ManufacturerDashboard />;
-      case "distributor":
+      case "DISTRIBUTOR":
         return <DistributorDashboard />;
-      case "retailer":
+      case "RETAILER":
         return <RetailerDashboard />;
-      case "consumer":
+      case "CONSUMER":
         return <ConsumerDashboard />;
       default:
-        return <SupplierDashboard />;
+        return <div className="text-center py-8">Invalid role: {user.role}</div>;
     }
   };
 
@@ -67,16 +79,18 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">Supply Chain Tracker</h1>
-                <p className="text-sm text-muted-foreground capitalize">{user.role} Dashboard</p>
+                <p className="text-sm text-muted-foreground">
+                  {user?.role} Dashboard
+                </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="text-right mr-2">
-                <p className="text-sm font-medium text-foreground">{user.email}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{user?.email}</span>
+                <Badge variant="outline">{user?.role}</Badge>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>

@@ -118,6 +118,19 @@ public class BatchService {
         return events.stream().map(this::convertEventToDTO).collect(Collectors.toList());
     }
 
+    public List<BatchDTO> getCurrentUserBatches() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return batchRepository.findByCurrentOwner(user.getId()).stream()
+                .map(batch -> {
+                    Product product = productRepository.findById(batch.getProductId()).orElseThrow();
+                    return convertToDTO(batch, product, user);
+                })
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     protected SupplyChainEvent createSupplyChainEvent(Batch batch, Long fromParty, Long toParty, 
                                                       String location, String status) {

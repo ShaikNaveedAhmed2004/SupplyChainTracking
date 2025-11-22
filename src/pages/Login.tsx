@@ -35,15 +35,16 @@ const Login = () => {
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify({
         email: response.email,
-        role: response.role.toLowerCase(),
-        id: response.userId.toString(),
+        role: response.role,
+        id: response.userId,
       }));
       
       toast({
         title: isLogin ? "Login successful" : "Registration successful",
-        description: `Welcome ${response.role.toLowerCase()}!`,
+        description: `Welcome ${response.role}!`,
       });
       
+      // Redirect to dashboard
       navigate("/dashboard");
     } catch (error: any) {
       toast({

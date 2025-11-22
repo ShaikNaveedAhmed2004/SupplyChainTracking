@@ -47,4 +47,9 @@ public class BatchController {
     public ResponseEntity<List<SupplyChainEventDTO>> getBatchHistory(@PathVariable Long id) {
         return ResponseEntity.ok(batchService.getBatchHistory(id));
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<BatchDTO>> getMyBatches() {
+        return ResponseEntity.ok(batchService.getCurrentUserBatches());
+    }
 }
