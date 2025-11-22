@@ -21,16 +21,16 @@ A comprehensive blockchain-based supply chain tracking application that provides
 ### Installation & Running
 
 ```bash
-# Clone the repository
+
 git clone <YOUR_GIT_URL>
 
-# Navigate to project directory
+
 cd supply-chain-tracker
 
-# Install dependencies
+
 npm install
 
-# Start development server
+
 npm run dev
 ```
 
@@ -271,36 +271,3 @@ npm run build
 # Preview production build
 npm run preview
 ```
-
-## 📚 Additional Resources
-
-- [Lovable Documentation](https://docs.lovable.dev/)
-- [Lovable Cloud Features](https://docs.lovable.dev/features/cloud)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Ethereum Smart Contracts](https://ethereum.org/en/developers/docs/smart-contracts/)
-- [Solidity Documentation](https://docs.soliditylang.org/)
-
-## 🤝 Contributing
-
-This is a production-ready template. To extend functionality:
-
-1. Enable Lovable Cloud in your project
-2. Create database tables via Supabase dashboard
-3. Implement Edge Functions for backend logic
-4. Deploy smart contracts for real blockchain integration
-5. Update frontend to use real API endpoints
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 🆘 Support
-
-For issues or questions:
-- Check [Lovable Documentation](https://docs.lovable.dev/)
-- Review the code comments
-- Contact support through Lovable platform
-
----
-
-**Built with ❤️ using Lovable - The world's first AI-powered full-stack development platform**
