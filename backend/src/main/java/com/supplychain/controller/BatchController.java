@@ -3,12 +3,16 @@ package com.supplychain.controller;
 import com.supplychain.dto.BatchDTO;
 import com.supplychain.dto.BatchStatusUpdateDTO;
 import com.supplychain.dto.SupplyChainEventDTO;
+import com.supplychain.service.BatchExportService;
 import com.supplychain.service.BatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,6 +22,7 @@ import java.util.List;
 public class BatchController {
 
     private final BatchService batchService;
+    private final BatchExportService batchExportService;
 
     @PostMapping
     @PreAuthorize("hasRole('SUPPLIER')")
@@ -51,5 +56,41 @@ public class BatchController {
     @GetMapping("/my")
     public ResponseEntity<List<BatchDTO>> getMyBatches() {
         return ResponseEntity.ok(batchService.getCurrentUserBatches());
+    }
+
+    @GetMapping("/export/csv")
+    public ResponseEntity<String> exportBatchesCsv() {
+        List<BatchDTO> batches = batchService.getAllBatches();
+        String csv = batchExportService.exportBatchesAsCsv(batches);
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=batches.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csv);
+    }
+
+    @GetMapping("/export/json")
+    public ResponseEntity<String> exportBatchesJson() throws Exception {
+        List<BatchDTO> batches = batchService.getAllBatches();
+        String json = batchExportService.exportBatchesAsJson(batches);
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=batches.json")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(json);
+    }
+
+    @PostMapping("/import/csv")
+    @PreAuthorize("hasAnyRole('SUPPLIER', 'ADMIN')")
+    public ResponseEntity<List<BatchDTO>> importBatchesCsv(@RequestParam("file") MultipartFile file) throws Exception {
+        List<BatchDTO> imported = batchExportService.importBatchesFromCsv(file);
+        return ResponseEntity.ok(imported);
+    }
+
+    @PostMapping("/import/json")
+    @PreAuthorize("hasAnyRole('SUPPLIER', 'ADMIN')")
+    public ResponseEntity<List<BatchDTO>> importBatchesJson(@RequestParam("file") MultipartFile file) throws Exception {
+        List<BatchDTO> imported = batchExportService.importBatchesFromJson(file);
+        return ResponseEntity.ok(imported);
     }
 }

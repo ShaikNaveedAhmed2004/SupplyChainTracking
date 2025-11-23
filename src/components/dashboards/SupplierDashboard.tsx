@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, TrendingUp, Activity, Loader2 } from "lucide-react";
 import BatchList from "@/components/BatchList";
+import { BatchExportImport } from "@/components/BatchExportImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -185,6 +186,8 @@ const SupplierDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <BatchExportImport onImportSuccess={loadBatches} />
 
       <Card>
         <CardHeader>

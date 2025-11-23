@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut } from "lucide-react";
+import { Package, LogOut, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import AdminDashboard from "@/components/dashboards/AdminDashboard";
 import SupplierDashboard from "@/components/dashboards/SupplierDashboard";
@@ -9,6 +9,7 @@ import ManufacturerDashboard from "@/components/dashboards/ManufacturerDashboard
 import DistributorDashboard from "@/components/dashboards/DistributorDashboard";
 import RetailerDashboard from "@/components/dashboards/RetailerDashboard";
 import ConsumerDashboard from "@/components/dashboards/ConsumerDashboard";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface UserData {
   email: string;
@@ -85,11 +86,15 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <NotificationBell />
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{user?.email}</span>
                 <Badge variant="outline">{user?.role}</Badge>
               </div>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
+                <User className="w-4 h-4" />
+              </Button>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout

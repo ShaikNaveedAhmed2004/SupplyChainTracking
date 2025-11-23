@@ -1,8 +1,10 @@
 package com.supplychain.controller;
 
-import com.supplychain.dto.UserDTO;
+import com.supplychain.dto.*;
 import com.supplychain.entity.User;
 import com.supplychain.repository.UserRepository;
+import com.supplychain.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -49,6 +52,27 @@ public class UserController {
         user.setRole(role);
         userRepository.save(user);
         return ResponseEntity.ok(convertToDTO(user));
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserDTO> getCurrentUserProfile() {
+        return ResponseEntity.ok(userService.getCurrentUserProfile());
+    }
+
+    @PutMapping("/profile/email")
+    public ResponseEntity<UserDTO> updateEmail(@Valid @RequestBody UpdateEmailRequest request) {
+        return ResponseEntity.ok(userService.updateEmail(request));
+    }
+
+    @PutMapping("/profile/password")
+    public ResponseEntity<Void> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
+        userService.updatePassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/activity")
+    public ResponseEntity<List<UserActivityDTO>> getUserActivity() {
+        return ResponseEntity.ok(userService.getUserActivity());
     }
 
     private UserDTO convertToDTO(User user) {
