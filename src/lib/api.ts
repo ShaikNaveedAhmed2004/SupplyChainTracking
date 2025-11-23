@@ -178,6 +178,57 @@ export const userAPI = {
     const response = await api.put<User>(`/users/${id}/role?role=${role}`);
     return response.data;
   },
+  getProfile: async () => {
+    const response = await api.get<User>('/users/profile');
+    return response.data;
+  },
+  updateEmail: async (newEmail: string, currentPassword: string) => {
+    const response = await api.put<User>('/users/profile/email', { newEmail, currentPassword });
+    return response.data;
+  },
+  updatePassword: async (currentPassword: string, newPassword: string) => {
+    await api.put('/users/profile/password', { currentPassword, newPassword });
+  },
+  getActivity: async () => {
+    const response = await api.get<any[]>('/users/activity');
+    return response.data;
+  },
+};
+
+// Batch Export/Import APIs
+export const batchExportAPI = {
+  exportCsv: async () => {
+    const response = await api.get('/batches/export/csv', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+  exportJson: async () => {
+    const response = await api.get('/batches/export/json', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+  importCsv: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<Batch[]>('/batches/import/csv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+  importJson: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<Batch[]>('/batches/import/json', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export default api;
