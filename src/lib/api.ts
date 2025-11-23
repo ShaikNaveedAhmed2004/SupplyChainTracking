@@ -138,6 +138,10 @@ export const batchAPI = {
     const response = await api.get<Batch[]>('/batches');
     return response.data;
   },
+  getMyBatches: async () => {
+    const response = await api.get<Batch[]>('/batches/my');
+    return response.data;
+  },
   getById: async (id: number) => {
     const response = await api.get<Batch>(`/batches/${id}`);
     return response.data;
@@ -174,12 +178,6 @@ export const userAPI = {
     const response = await api.put<User>(`/users/${id}/role?role=${role}`);
     return response.data;
   },
-};
-
-// Get current user's batches
-export const getMyBatches = async () => {
-  const response = await api.get<Batch[]>('/batches/my');
-  return response.data;
 };
 
 export default api;

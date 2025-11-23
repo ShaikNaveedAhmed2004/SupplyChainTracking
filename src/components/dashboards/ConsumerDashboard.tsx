@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, QrCode, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, QrCode, ShieldCheck, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { QrReader } from "react-qr-reader";
 
 const ConsumerDashboard = () => {
   const [batchId, setBatchId] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -24,19 +27,39 @@ const ConsumerDashboard = () => {
   };
 
   const handleScanQR = () => {
+    setShowScanner(true);
+  };
+
+  const handleQRScan = (result: any) => {
+    if (result) {
+      const scannedData = result?.text || result;
+      // Extract batch ID from QR code data (assuming format: "BATCH:123" or just "123")
+      const extractedId = scannedData.includes(":") 
+        ? scannedData.split(":")[1] 
+        : scannedData;
+      
+      setBatchId(extractedId);
+      setShowScanner(false);
+      toast({
+        title: "QR Code Scanned",
+        description: `Batch ID: ${extractedId}`,
+      });
+    }
+  };
+
+  const handleQRError = (error: any) => {
+    console.error("QR Scan Error:", error);
     toast({
-      title: "QR Scanner",
-      description: "QR code scanning would open camera here",
+      title: "Scanner Error",
+      description: "Failed to access camera. Please check permissions.",
+      variant: "destructive",
     });
-    // Simulate QR scan result
-    setTimeout(() => {
-      setBatchId("BATCH-001");
-    }, 1000);
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="border-2 border-primary/20">
+    <>
+      <div className="space-y-6">
+        <Card className="border-2 border-primary/20">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-3 bg-primary/10 rounded-lg">
@@ -152,6 +175,36 @@ const ConsumerDashboard = () => {
         </CardContent>
       </Card>
     </div>
+
+    <Dialog open={showScanner} onOpenChange={setShowScanner}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Scan QR Code</DialogTitle>
+          <DialogDescription>
+            Position the QR code within the camera frame
+          </DialogDescription>
+        </DialogHeader>
+        <div className="relative">
+          <QrReader
+            onResult={handleQRScan}
+            constraints={{ facingMode: "environment" }}
+            className="w-full"
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 bg-background/80"
+            onClick={() => setShowScanner(false)}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground text-center">
+          Scan a batch QR code to automatically fill in the ID
+        </p>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 };
 

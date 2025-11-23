@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, TrendingUp, Activity } from "lucide-react";
+import { Package, TrendingUp, Activity, Loader2 } from "lucide-react";
 import BatchList from "@/components/BatchList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { productAPI, batchAPI, getMyBatches, type Product, type Batch } from "@/lib/api";
+import { productAPI, batchAPI, type Product, type Batch } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { productSchema, batchSchema, type ProductFormData, type BatchFormData } from "@/lib/validationSchemas";
 
 const SupplierDashboard = () => {
-  const [productName, setProductName] = useState("");
-  const [productDescription, setProductDescription] = useState("");
-  const [productCategory, setProductCategory] = useState("");
-  const [productSku, setProductSku] = useState("");
-  const [batchQuantity, setBatchQuantity] = useState("");
-  const [batchLocation, setBatchLocation] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState("");
+  const [productForm, setProductForm] = useState<ProductFormData>({
+    name: "",
+    description: "",
+    category: "",
+    sku: ""
+  });
+  const [productErrors, setProductErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
+  const [batchForm, setBatchForm] = useState<Partial<BatchFormData>>({
+    batchNumber: "",
+    quantity: undefined,
+    currentLocation: "",
+    productId: undefined
+  });
+  const [batchErrors, setBatchErrors] = useState<Partial<Record<keyof BatchFormData, string>>>({});
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -45,7 +53,7 @@ const SupplierDashboard = () => {
 
   const loadBatches = async () => {
     try {
-      const data = await getMyBatches();
+      const data = await batchAPI.getMyBatches();
       setBatches(data);
     } catch (error: any) {
       toast({
@@ -57,33 +65,30 @@ const SupplierDashboard = () => {
   };
 
   const handleCreateProduct = async () => {
-    if (!productName.trim() || !productCategory.trim() || !productSku.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
+    setProductErrors({});
+
+    const validation = productSchema.safeParse(productForm);
+    if (!validation.success) {
+      const errors: Partial<Record<keyof ProductFormData, string>> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0] as keyof ProductFormData] = err.message;
+        }
       });
+      setProductErrors(errors);
       return;
     }
 
     setLoading(true);
     try {
-      await productAPI.create({
-        name: productName,
-        description: productDescription,
-        category: productCategory,
-        sku: productSku,
-      });
+      await productAPI.create(validation.data);
       
       toast({
         title: "Product Created",
-        description: `Product "${productName}" has been registered successfully`,
+        description: `Product "${validation.data.name}" has been registered successfully`,
       });
       
-      setProductName("");
-      setProductDescription("");
-      setProductCategory("");
-      setProductSku("");
+      setProductForm({ name: "", description: "", category: "", sku: "" });
       setOpen(false);
       loadProducts();
     } catch (error: any) {
@@ -98,35 +103,40 @@ const SupplierDashboard = () => {
   };
 
   const handleCreateBatch = async () => {
-    if (!selectedProductId || !batchQuantity.trim() || !batchLocation.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
+    setBatchErrors({});
+
+    const batchNumber = "BATCH-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const validation = batchSchema.safeParse({
+      ...batchForm,
+      batchNumber,
+      quantity: Number(batchForm.quantity),
+      productId: Number(batchForm.productId)
+    });
+
+    if (!validation.success) {
+      const errors: Partial<Record<keyof BatchFormData, string>> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0] as keyof BatchFormData] = err.message;
+        }
       });
+      setBatchErrors(errors);
       return;
     }
 
     setLoading(true);
     try {
-      const batchNumber = "BATCH-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-      
       await batchAPI.create({
-        productId: parseInt(selectedProductId),
-        batchNumber,
-        quantity: parseInt(batchQuantity),
-        currentLocation: batchLocation,
+        ...validation.data,
         status: "CREATED",
       });
       
       toast({
         title: "Batch Created",
-        description: `Batch ${batchNumber} created with ${batchQuantity} units`,
+        description: `Batch ${batchNumber} created with ${validation.data.quantity} units`,
       });
       
-      setBatchQuantity("");
-      setBatchLocation("");
-      setSelectedProductId("");
+      setBatchForm({ batchNumber: "", quantity: undefined, currentLocation: "", productId: undefined });
       loadBatches();
     } catch (error: any) {
       toast({
@@ -200,39 +210,58 @@ const SupplierDashboard = () => {
                   <Input
                     id="productName"
                     placeholder="e.g., Organic Cotton Fabric"
-                    value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
+                    value={productForm.name}
+                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                   />
+                  {productErrors.name && (
+                    <p className="text-sm text-destructive">{productErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="productCategory">Category *</Label>
                   <Input
                     id="productCategory"
                     placeholder="e.g., Textiles"
-                    value={productCategory}
-                    onChange={(e) => setProductCategory(e.target.value)}
+                    value={productForm.category}
+                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                   />
+                  {productErrors.category && (
+                    <p className="text-sm text-destructive">{productErrors.category}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="productSku">SKU *</Label>
                   <Input
                     id="productSku"
                     placeholder="e.g., OCF-001"
-                    value={productSku}
-                    onChange={(e) => setProductSku(e.target.value)}
+                    value={productForm.sku}
+                    onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
                   />
+                  {productErrors.sku && (
+                    <p className="text-sm text-destructive">{productErrors.sku}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="productDescription">Description</Label>
+                  <Label htmlFor="productDescription">Description *</Label>
                   <Textarea
                     id="productDescription"
                     placeholder="Product details..."
-                    value={productDescription}
-                    onChange={(e) => setProductDescription(e.target.value)}
+                    value={productForm.description}
+                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                   />
+                  {productErrors.description && (
+                    <p className="text-sm text-destructive">{productErrors.description}</p>
+                  )}
                 </div>
                 <Button onClick={handleCreateProduct} className="w-full" disabled={loading}>
-                  {loading ? "Creating..." : "Create Product"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Product"
+                  )}
                 </Button>
               </div>
             </DialogContent>
@@ -249,7 +278,10 @@ const SupplierDashboard = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="batchProduct">Product *</Label>
-              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+              <Select 
+                value={batchForm.productId?.toString()} 
+                onValueChange={(value) => setBatchForm({ ...batchForm, productId: Number(value) })}
+              >
                 <SelectTrigger id="batchProduct">
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
@@ -261,6 +293,9 @@ const SupplierDashboard = () => {
                   ))}
                 </SelectContent>
               </Select>
+              {batchErrors.productId && (
+                <p className="text-sm text-destructive">{batchErrors.productId}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="batchQuantity">Quantity *</Label>
@@ -268,21 +303,35 @@ const SupplierDashboard = () => {
                 id="batchQuantity"
                 type="number"
                 placeholder="e.g., 1000"
-                value={batchQuantity}
-                onChange={(e) => setBatchQuantity(e.target.value)}
+                value={batchForm.quantity || ""}
+                onChange={(e) => setBatchForm({ ...batchForm, quantity: Number(e.target.value) })}
+                min="1"
               />
+              {batchErrors.quantity && (
+                <p className="text-sm text-destructive">{batchErrors.quantity}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="batchLocation">Location *</Label>
               <Input
                 id="batchLocation"
                 placeholder="e.g., Warehouse A"
-                value={batchLocation}
-                onChange={(e) => setBatchLocation(e.target.value)}
+                value={batchForm.currentLocation}
+                onChange={(e) => setBatchForm({ ...batchForm, currentLocation: e.target.value })}
               />
+              {batchErrors.currentLocation && (
+                <p className="text-sm text-destructive">{batchErrors.currentLocation}</p>
+              )}
             </div>
-            <Button onClick={handleCreateBatch} className="w-full" disabled={loading}>
-              {loading ? "Creating..." : "Create Batch"}
+            <Button onClick={handleCreateBatch} className="w-full" disabled={loading || products.length === 0}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Batch"
+              )}
             </Button>
           </div>
         </CardContent>
